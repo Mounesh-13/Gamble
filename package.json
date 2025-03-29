@@ -18,8 +18,10 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "npm run build && serve -s build"
   },
+  "homepage": "https://mounesh-13.github.io/Gamble",
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -37,5 +39,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0",
+    "install": "^0.13.0",
+    "npm": "^11.2.0"
   }
 }
