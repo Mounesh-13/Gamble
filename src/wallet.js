@@ -7,34 +7,14 @@ function Wallet() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulate fetching balance (replace with your actual fetch later)
-    const simulateFetch = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Simulate a delay (e.g., 1 second)
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Simulate successful fetch with a default balance
-        const defaultBalance = 1234.56; // Replace with your desired default value
-        setBalance(defaultBalance);
-      } catch (err) {
-        setError(err.message || 'Failed to simulate fetch');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    simulateFetch();
-
-    // When your backend is ready, replace simulateFetch with:
-    /*
     const fetchBalance = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch('YOUR_BACKEND_ENDPOINT');
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/user/balance`, {
+          method: 'GET',
+          credentials: 'include',
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch balance');
         }
@@ -46,8 +26,8 @@ function Wallet() {
         setLoading(false);
       }
     };
+
     fetchBalance();
-    */
   }, []);
 
   if (loading) {
@@ -56,10 +36,6 @@ function Wallet() {
 
   if (error) {
     return <div className="wallet-container error">Error: {error}</div>;
-  }
-
-  if (balance === null) {
-    return <div className="wallet-container no-balance">Balance not available.</div>;
   }
 
   return (

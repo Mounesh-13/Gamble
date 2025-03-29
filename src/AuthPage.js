@@ -5,27 +5,33 @@ function AuthPage({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
 
-    // Simulate authentication (replace with your backend logic)
     try {
-      // Simulate API call (replace with your actual API endpoint)
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
-
-      // Simulate successful login/signup
-      onLoginSuccess({ email }); // Pass user data to parent component
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/${isSignup ? 'signup' : 'login'}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include', // Include cookies in the request
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Authentication failed');
+      
+      onLoginSuccess(data);
     } catch (err) {
-      setError(err.message || 'Authentication failed');
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGoogleAuth = () => {
-    // Implement Google authentication logic here
-    console.log('Google authentication initiated');
-    // Replace with your Google OAuth flow
+    window.location.href = `${process.env.REACT_APP_API_URL}/auth/google`;
   };
 
   return (
@@ -38,6 +44,7 @@ function AuthPage({ onLoginSuccess }) {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
             style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
           />
           <input
@@ -45,13 +52,15 @@ function AuthPage({ onLoginSuccess }) {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
             style={{ width: '100%', padding: '8px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '4px' }}
           />
           <button
             type="submit"
+            disabled={loading}
             style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
           >
-            {isSignup ? 'Sign Up' : 'Login'}
+            {loading ? 'Processing...' : isSignup ? 'Sign Up' : 'Login'}
           </button>
         </form>
         <button

@@ -1,43 +1,71 @@
-import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Header from './header';
-import Profile from './Profile';
-import CoinFlip from './CoinFlip';
-import AuthPage from './AuthPage';
+import React, { useState, useEffect, useCallback } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Header from "./header";
+import Profile from "./Profile";
+import CoinFlip from "./CoinFlip";
+import AuthPage from "./AuthPage";
+import Wallet from "./wallet";
+import NotFoundPage from "./NotFoundPage";
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const verifyUser = useCallback(async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/verify`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setUser(data);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Auth verification failed:", error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    verifyUser();
+  }, [verifyUser]);
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
-    setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
+  const handleLogout = async () => {
+    try {
+      await fetch(`${process.env.REACT_APP_API_URL}/auth/logout`, {
+        method: "GET",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setUser(null);
+      window.location.href = "/login";
+    }
   };
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <BrowserRouter>
-      <div className="App">
-        {isAuthenticated && <Header onLogout={handleLogout} />} {/* Pass handleLogout as onLogout */}
-        <Routes>
-          <Route
-            path="/"
-            element={isAuthenticated ? <CoinFlip user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/profile"
-            element={isAuthenticated ? <Profile user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/login"
-            element={!isAuthenticated ? <AuthPage onLoginSuccess={handleLoginSuccess} /> : <Navigate to="/" />}
-          />
-        </Routes>
-      </div>
+      {user && <Header onLogout={handleLogout} />}
+      <Routes>
+        <Route path="/" element={user ? <CoinFlip /> : <Navigate to="/login" replace />} />
+        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" replace />} />
+        <Route path="/profile/wallet" element={user ? <Wallet /> : <Navigate to="/login" replace />} />
+        <Route path="/login" element={!user ? <AuthPage onLoginSuccess={handleLoginSuccess} /> : <Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </BrowserRouter>
   );
 }

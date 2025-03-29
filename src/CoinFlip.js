@@ -1,16 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import './CoinFlip.css'; // Import your CSS file
-import Wallet from './wallet'; //Import the wallet component.
+import Wallet from './wallet'; // Import the wallet component.
 
 function CoinFlip() {
   const [choice, setChoice] = useState(null);
   const [betAmount, setBetAmount] = useState('');
   const [result, setResult] = useState(null);
   const [flipping, setFlipping] = useState(false);
-  const [balance, setBalance] = useState(100); //Default balance for testing, replace with wallet value.
+  const [balance, setBalance] = useState(0);
   const [error, setError] = useState(null);
 
-  const flipCoin = () => {
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/user/balance`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setBalance(data.balance);
+        } else {
+          setError(data.message || 'Failed to fetch balance');
+        }
+      } catch (err) {
+        setError('Error fetching balance');
+      }
+    };
+    fetchBalance();
+  }, []);
+
+  const flipCoin = async () => {
     if (!choice) {
       setError('Please choose Heads or Tails.');
       return;
@@ -26,23 +46,34 @@ function CoinFlip() {
 
     setError(null);
     setFlipping(true);
-    setTimeout(() => {
-      const random = Math.random();
-      const outcome = random < 0.5 ? 'heads' : 'tails';
-      setResult(outcome);
-      setFlipping(false);
-
-      if (choice === outcome) {
-        setBalance(balance + parseFloat(betAmount));
-      } else {
-        setBalance(balance - parseFloat(betAmount));
+    
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/coin/flip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ choice, amount: parseFloat(betAmount) }),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Flip failed');
       }
-    }, 2000); // Simulate flip animation (2 seconds)
+      
+      setTimeout(() => {
+        setResult(data.result);
+        setBalance(data.newBalance);
+        setFlipping(false);
+      }, 2000); // Simulate flip animation
+    } catch (err) {
+      setError(err.message);
+      setFlipping(false);
+    }
   };
 
   return (
     <div className="coin-flip-container">
-      <Wallet balance={balance}/>
+      <Wallet balance={balance} />
       <h2>Coin Flip Game</h2>
       <div className="choice-buttons">
         <button
